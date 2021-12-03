@@ -1,10 +1,10 @@
 var mysql = require('mysql');
-var pw = process.env.DBPW;
+var pw = 'asdflock';
 var conn = mysql.createConnection({
 	host: 'localhost',
 	user: 'prec',
 	password: pw,
-	database: 'mysql'
+	database: 'test'
 });
 
 exports.sql = conn;
