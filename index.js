@@ -89,7 +89,7 @@ app.post('/login', (req, res) => {
 				var token = CreateToken(id);
 				async.waterfall([(callback)=> {
 					try {
-						var que = 'UPDATE PUSER SET expired=NOW()+3600, token=\'{0}\' where u_id=\'{1}\''.format(token, id);
+						var que = 'UPDATE PUSER SET u_expired=DATE_ADD(NOW(), INTERVAL 1 HOUR), u_token=\'{0}\' where u_id=\'{1}\''.format(token, id);
 						console.log(que);
 						conn.query(que, (e, r, f) => {
 							if(e) callback('SQL ERROR2', e); 
