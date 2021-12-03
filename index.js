@@ -81,33 +81,39 @@ app.post('/login', (req, res) => {
 		} else {
 			if(result == "" || result == undefined) {
 				res.json({
-				success: true,
-				responseCode: 200,
-				message: 'auth failed'
+					success: true,
+					responseCode: 200,
+					message: 'auth failed'
 				});
 			} else {
 				var token = CreateToken(id);
 				async.waterfall([(callback)=> {
 					try {
-					conn.query('UPDATE PUSER SET expired=NOW()+3600 where u_id=\''+id+'\'', (e, r, f) => {
-						if(e) callback('SQL ERROR2', e); else callback(null, r);
+						var que = 'UPDATE PUSER SET expired=NOW()+3600, token=\'{0}\' where u_id=\'{1}\''.format(token, id);
+						console.log(que);
+						conn.query(que, (e, r, f) => {
+							if(e) callback('SQL ERROR2', e); 
+							else callback(null, r);
+						});
 					} catch (e) {
 						callback('SQL ERROR', e);
-					}}], (err, result) => {
+					}
+					}], (err, result) => {
 						if(err=='SQL ERROR') {
 							console.log(result);
 							res.json({
 								success: false,
 								responseCode: 406,
 								message: 'SQL ERROR2'
-							}); }}});
-
-				res.json({
-					token: token,
-					success: true,
-					responceCode: 200,
-					user: result
-				});
+							});
+						}
+						res.json({
+							token: token,
+							success: true,
+							responceCode: 200,
+							user: result
+						});
+					});
 			}
 		}
 	});
