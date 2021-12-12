@@ -7,6 +7,11 @@ var bp = require('body-parser');
 app.set('view engine', 'ejs');
 app.engine('html', require('ejs').renderFile);
 
+var axios = require('axios');
+axios.default.timeout = 5 * 1000;
+
+process.on('uncaughtException', (err) => { console.log("uncaughtException (Node Alive)", err); });
+
 var conn = require('./sql.js').sql;
 var port = 8080;
 
@@ -27,18 +32,11 @@ const CreateToken = (data) => {
 }
 
 app.get('/', (req, res) => {
-	console.log('/');
-	var token = CreateToken("asdf1234"); 
+	var token = CreateToken(""); 
 	var data = { data : token }; console.log(data);
-	res.render('main.html', data);
+	res.status(404).render('main.html', data);
 });
 
-app.get('/test', (req, res) => {
-	console.log('/test');
-	res.json({
-		xxxx: 1,
-	});
-});
 
 app.get('/register', (req, res) => {
 	console.log('vtest');
@@ -164,12 +162,14 @@ app.post('/sche', (req, res) => {
 	var end = req.body.end;
 	var seme = req.body.seme;
 	var date = req.body.date;
+	var title = req.body.title;
 	var content = req.body.content;
 	var share = (req.body.share=='on')? 1 : 0;
 
-	var uQuery = '(select u_no from PUSER where u_id=\'{0}\')'.format(user);
-	
-	var qu ='insert into SCHEDULE(s_user, s_day, s_start, s_end, s_content, s_seme, s_able) values(' + uQuery + ',\'{0}\', \'{1}\', \'{2}\', \'{3}\', \'{4}\', \'{5}\')'.format(day, start, end, content, seme, share);
+	// var uQuery = '(select u_no from PUSER where u_id=\'{0}\')'.format(user);
+
+
+	var qu ='insert into SCHEDULE(s_user, s_day, s_start, s_end, s_title, s_content, s_seme, s_able) values(\'{0}\', \'{1}\', \'{2}\', \'{3}\', \'{4}\', \'{5}\', \'{6}\',\'{7}\')'.format(user, day, start, end, title, content, seme, share);
 	console.log(qu);
 
 	async.waterfall([
@@ -236,6 +236,71 @@ app.post('/memo', (req, res) => {
 					statusCode: 200,
 					success: true,
 					message: 'Create Memo Success',
+					result: result
+				});
+			}
+		});
+});
+
+app.post('/getMemo', (req, res) => {
+	var user = req.body.user;
+
+	var qu = 'select * from MEMO where m_user=(select u_no from PUSER where u_id=\'{0}\');'.format(user);
+console.log(qu);	
+
+	async.waterfall([
+		(callback) => {
+			conn.query(qu, (e, r, f) => {
+				if(e) callback('SQL ERROR', e);
+				else callback(null, r);
+			});
+		}], (err, result) => {
+			if(err=='SQL ERROR'){
+				res.json({
+					statusCode: 406,
+					message: 'SQL ERROR' + result.sqlMessage,
+					success: false
+				});
+			} else {
+				res.json({
+					statusCode: 200,
+					success: true,
+					message: "load Memo Success",
+					memo: result
+				});
+			}
+		});
+});
+
+app.post('delmemo', (req, res) => {
+	var no = req.body.no;
+	var user = req.body.user;
+
+	var qu = 'delete from MEMO where m_no={0} and m_user=(select u_id from PUSER where u_no={1});'.format(no, user);
+	qu = qu + 'delete from REFE where REF_MEMO={0};'.format(no);
+
+	async.waterfall([
+		(callback) => {
+			conn.query(qu, (e, r, f) => {
+				if(e) {
+					callback('SQL ERROR', e);
+				} else {
+					callback(null, r);
+				}
+			});
+		}], (err, result) => {
+			if(err=='SQL ERROR'){
+				console.log(result);
+				res.json({
+					statusCode: 408,
+					message: 'SQL ERROR:' + result.sqlMessage,
+					success: false
+				});
+			} else {
+				res.json({
+					statusCode: 200,
+					success: true,
+					message: 'Delete Memo Success',
 					result: result
 				});
 			}

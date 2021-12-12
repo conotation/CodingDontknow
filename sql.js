@@ -4,7 +4,8 @@ var conn = mysql.createConnection({
 	host: 'localhost',
 	user: 'prec',
 	password: pw,
-	database: 'test'
+	database: 'test2',
+	multipleStatements: true
 });
 
 exports.sql = conn;
