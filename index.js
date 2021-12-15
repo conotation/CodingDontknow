@@ -226,10 +226,9 @@ app.post('/memo', (req, res) => {
 	var user = req.body.user;
 	var date = req.body.date;
 	var content =  req.body.content;
+	var share = (req.body.share=='on')? 1 : 0;
 
-	var uQuery = '(select u_no from PUSER where u_id=\'{0}\')'.format(user);
-
-	var qu ='insert into MEMO(m_user, m_date, m_content) values(' + uQuery + ',"' + date + '", \'{0}\')'.format(content);
+	var qu ='insert into MEMO(m_user, m_date, m_content, s_able) values(\'{0}\', \'{1}\', \'{2}\', \'{3}\')'.format(user, date, content, share);
 	console.log(qu);
 
 	async.waterfall([

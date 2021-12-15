@@ -1,5 +1,5 @@
 var mysql = require('mysql');
-var pw = 'asdflock';
+var pw = 'tokenasdf';
 var config = {
 	host: 'localhost',
 	user: 'prec',
