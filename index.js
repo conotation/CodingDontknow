@@ -405,7 +405,7 @@ app.get('allREFE', (req, res) => {
 
 app.post('/getData', (req, res) => {
 	var user = req.body.user;
-	var sQuery = 'select * from SCHEDULE where s_user=\'{0}\' or s_no in (select REF_SCHE from REFE where REF_PEOPLE=\'{1}\' and flag=0)'.format(user, user);
+	var sQuery = 'select *, HOUR(s_start) as s_s, HOUR(s_end) as s_e from SCHEDULE where s_user=\'{0}\' or s_no in (select REF_SCHE from REFE where REF_PEOPLE=\'{1}\' and flag=0)'.format(user, user);
 	var mQuery = 'select * from MEMO where m_user=\'{0}\' or m_no in (select REF_MEMO from REFE where REF_PEOPLE=\'{1}\' and flag=1)'.format(user, user);
 
 	async.waterfall([
