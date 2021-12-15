@@ -4,6 +4,20 @@ var express = require('express')
 var app = express();
 var async = require('async');
 var bp = require('body-parser');
+var mysql = require('mysql');
+var cron = require('node-cron');
+
+var task = cron.schedule('* * * * * *', function() {
+	console.log(now());
+	console.log('-----------------');
+	console.log('SQL RECONNECT');
+	conn.end();
+
+	conn.start();
+});
+
+task.start();
+
 app.set('view engine', 'ejs');
 app.engine('html', require('ejs').renderFile);
 
@@ -12,7 +26,10 @@ axios.default.timeout = 5 * 1000;
 
 process.on('uncaughtException', (err) => { console.log("uncaughtException (Node Alive)", err); });
 
-var conn = require('./sql.js').sql;
+var config = require('./sql.js')
+var conn = mysql.createConnection(config.sql);
+conn.connect();
+
 var port = 8080;
 
 app.use(bp.json());
@@ -35,6 +52,7 @@ app.get('/', (req, res) => {
 	var token = CreateToken(""); 
 	var data = { data : token }; console.log(data);
 	res.status(404).render('main.html', data);
+	conn = mysql.createConnection(config.sql);
 });
 
 
@@ -272,7 +290,7 @@ console.log(qu);
 		});
 });
 
-app.post('delmemo', (req, res) => {
+app.post('/delmemo', (req, res) => {
 	var no = req.body.no;
 	var user = req.body.user;
 
@@ -331,6 +349,36 @@ app.get('/allSche', (req, res) => {
 	});
 });
 
+app.post('/getSche', (req, res) => {
+	var user = req.body.user;
+
+	var qu = 'select *, HOUR(s_start) as s_s, HOUR(s_end) as s_e from SCHEDULE where s_user=\'{0}\';'.format(user);
+console.log(qu);	
+
+	async.waterfall([
+		(callback) => {
+			conn.query(qu, (e, r, f) => {
+				if(e) callback('SQL ERROR', e);
+				else callback(null, r);
+			});
+		}], (err, result) => {
+			if(err=='SQL ERROR'){
+				res.json({
+					statusCode: 406,
+					message: 'SQL ERROR' + result.sqlMessage,
+					success: false
+				});
+			} else {
+				res.json({
+					statusCode: 200,
+					success: true,
+					message: "load Sche Success",
+					sche: result
+				});
+			}
+		});
+});
+
 app.get('allMemo', (req, res) => {
 	var qu = 'select * from MEMO';
 	conn.query(qu, (e, r, f) => {
@@ -353,6 +401,48 @@ app.get('allREFE', (req, res) => {
 			refes: r
 		});
 	});
+});
+
+app.post('/getData', (req, res) => {
+	var user = req.body.user;
+	var sQuery = 'select * from SCHEDULE where s_user=\'{0}\' or s_no in (select REF_SCHE from REFE where REF_PEOPLE=\'{1}\' and flag=0)'.format(user, user);
+	var mQuery = 'select * from MEMO where m_user=\'{0}\' or m_no in (select REF_MEMO from REFE where REF_PEOPLE=\'{1}\' and flag=1)'.format(user, user);
+
+	async.waterfall([
+		(callback) => {	// get Sche
+			conn.query(sQuery, (e, r, f) => {
+				if(e) callback('SQL ERROR', e);
+				else callback(null, r);
+			});
+		}, (arg1, callback) => {	// get Memo
+			conn.query(mQuery, (e, r, f) => {
+				if(e) callback('SQL ERROR', e);
+				else {
+					var data = Array();
+					data.push(arg1);
+					data.push(r);
+					callback(null, data);
+				}
+			});
+		}], (err, result) => {
+			if(err=='SQL ERROR'){
+				res.json({
+					statusCode: 407,
+					message: 'SQL ERROR' + result.sqlMessage,
+					success: false
+				});
+			} else {
+				res.json({
+					statusCode: 200,
+					success: true,
+					message: "load Data Success",
+					data: result
+				});
+			}
+		});
+
+
+
 });
 
 app.listen(port, () => {
