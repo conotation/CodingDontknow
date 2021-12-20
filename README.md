@@ -87,3 +87,29 @@ create table REFE (
 ```
 
 <!-- 가능하면 제대로 좀 짜보고싶네 ROUTER 설정도 좀 하고 -->
+
+## ENDPOINT
+
+#### 로그인
+`POST /login`
+
+#### 회원가입
+`POST /register`
+
+#### 일정 작성
+`POST /sche`
+
+#### 메모 작성
+`POST /memo`
+
+#### 시간표 불러오기
+`POST /getData`
+
+#### 일정 공유하기
+`POST /setRefe`
+
+
+## 추후 보강 사항
+- DJANGO 내의 반복생성자 사용
+- 이미지화 기능 추가
+- 코드 리팩토링
